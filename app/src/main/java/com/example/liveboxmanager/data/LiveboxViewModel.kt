@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * ViewModel partagé : conserve la session Livebox et expose
+ * ViewModel partagé : conserve la session du modem et expose
  * un état observable pour les écrans Compose.
  */
 class LiveboxViewModel : ViewModel() {
@@ -54,7 +54,7 @@ class LiveboxViewModel : ViewModel() {
             } else {
                 val err = result.exceptionOrNull()
                 message = if (err != null) {
-                    "Erreur de connexion : " + (err.message ?: "impossible de joindre la Livebox. Vérifiez que vous êtes bien sur son Wi-Fi.")
+                    "Erreur de connexion : " + (err.message ?: "impossible de joindre le modem. Vérifiez que vous êtes bien sur son Wi-Fi.")
                 } else {
                     "Échec de connexion — vérifiez le mot de passe admin."
                 }
@@ -82,36 +82,43 @@ class LiveboxViewModel : ViewModel() {
 
     fun updateWifi(config: WifiConfig) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                runCatching { api.setWifiSsid("wl0", config.ssid24) }
-                runCatching { api.setWifiSsid("wl1", config.ssid5) }
-                runCatching { api.setWifiChannel("wl0", config.channel24) }
-                runCatching { api.setWifiChannel("wl1", config.channel5) }
-                runCatching { wifi = api.fetchWifiConfig() }
+            val results = withContext(Dispatchers.IO) {
+                listOf(
+                    runCatching { api.setWifiSsid("wl0", config.ssid24) }.getOrDefault(false),
+                    runCatching { api.setWifiSsid("wl1", config.ssid5) }.getOrDefault(false),
+                    runCatching { api.setWifiChannel("wl0", config.channel24) }.getOrDefault(false),
+                    runCatching { api.setWifiChannel("wl1", config.channel5) }.getOrDefault(false),
+                    runCatching { wifi = api.fetchWifiConfig() }.isSuccess,
+                )
             }
-            message = "Configuration WiFi appliquée."
+            message = if (results.take(4).all { it }) {
+                "Configuration WiFi appliquée."
+            } else {
+                "Lecture OK, mais ce firmware a refusé la modification du WiFi (essayez depuis l'interface web du modem)."
+            }
         }
     }
 
     fun updateFirewall(status: FirewallStatus) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                runCatching { api.setFirewallLevel(status.level) }
-                runCatching { api.setUpnp(status.upnpEnabled) }
-                runCatching { firewall = api.fetchFirewall() }
+            val ok = withContext(Dispatchers.IO) {
+                runCatching { api.setFirewallLevel(status.level) }.getOrDefault(false)
             }
-            message = "Pare-feu mis à jour."
+            message = if (ok) "Pare-feu mis à jour." else "Le pare-feu n'est pas modifiable via cette API sur ce modem."
         }
     }
 
     fun toggleParental(rule: ParentalRule) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                runCatching { api.setDeviceSchedule(rule.deviceId, !rule.enabled, rule.schedule) }
+            val ok = withContext(Dispatchers.IO) {
+                runCatching { api.setDeviceSchedule(rule.deviceId, !rule.enabled, rule.schedule) }.getOrDefault(false)
             }
-            parentalRules = parentalRules.map {
-                if (it.id == rule.id) it.copy(enabled = !rule.enabled) else it
+            if (ok) {
+                parentalRules = parentalRules.map {
+                    if (it.id == rule.id) it.copy(enabled = !rule.enabled) else it
+                }
             }
+            message = if (ok) "Règle mise à jour." else "Le contrôle parental n'est pas exposé par l'API de ce modem."
         }
     }
 }

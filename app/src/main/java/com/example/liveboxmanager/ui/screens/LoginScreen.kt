@@ -13,7 +13,7 @@ import com.example.liveboxmanager.data.LiveboxViewModel
 
 @Composable
 fun LoginScreen(vm: LiveboxViewModel, onLogged: () -> Unit) {
-    var host by remember { mutableStateOf("192.168.1.1") }
+    var host by remember { mutableStateOf("192.168.0.1") }
     var password by remember { mutableStateOf("") }
 
     LaunchedEffect(vm.isLoggedIn) { if (vm.isLoggedIn) onLogged() }
@@ -23,16 +23,16 @@ fun LoginScreen(vm: LiveboxViewModel, onLogged: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Livebox Manager", style = MaterialTheme.typography.headlineLarge)
+        Text("Modem Manager", style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(8.dp))
-        Text("Configurez votre Livebox en un coup d'œil",
+        Text("Configurez votre modem VOO / Orange Belgique en un coup d'œil",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(32.dp))
 
         OutlinedTextField(
             value = host, onValueChange = { host = it },
-            label = { Text("Adresse de la Livebox") },
+            label = { Text("Adresse du modem") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
