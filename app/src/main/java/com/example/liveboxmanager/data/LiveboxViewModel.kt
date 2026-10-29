@@ -36,14 +36,14 @@ class LiveboxViewModel : ViewModel() {
     var parentalRules by mutableStateOf(listOf<ParentalRule>())
         private set
 
-    fun login(host: String, password: String) {
+    fun login(host: String, username: String, password: String) {
         isLoading = true
         message = null
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     api = LiveboxApi(host)
-                    api.login(password)
+                    api.login(password, username)
                 }
             }
             val ok = result.getOrDefault(false)
@@ -56,7 +56,7 @@ class LiveboxViewModel : ViewModel() {
                 message = if (err != null) {
                     "Erreur de connexion : " + (err.message ?: "impossible de joindre le modem. Vérifiez que vous êtes bien sur son Wi-Fi.")
                 } else {
-                    "Échec de connexion — vérifiez le mot de passe admin."
+                    "Échec de connexion — vérifiez l'identifiant et le mot de passe."
                 }
             }
         }

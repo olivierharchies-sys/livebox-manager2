@@ -14,6 +14,7 @@ import com.example.liveboxmanager.data.LiveboxViewModel
 @Composable
 fun LoginScreen(vm: LiveboxViewModel, onLogged: () -> Unit) {
     var host by remember { mutableStateOf("192.168.0.1") }
+    var username by remember { mutableStateOf("admin") }
     var password by remember { mutableStateOf("") }
 
     LaunchedEffect(vm.isLoggedIn) { if (vm.isLoggedIn) onLogged() }
@@ -38,8 +39,15 @@ fun LoginScreen(vm: LiveboxViewModel, onLogged: () -> Unit) {
         )
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
+            value = username, onValueChange = { username = it },
+            label = { Text("Identifiant (admin ou user)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(
             value = password, onValueChange = { password = it },
-            label = { Text("Mot de passe admin") },
+            label = { Text("Mot de passe") },
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -47,7 +55,7 @@ fun LoginScreen(vm: LiveboxViewModel, onLogged: () -> Unit) {
         )
         Spacer(Modifier.height(20.dp))
         Button(
-            onClick = { vm.login(host.trim(), password) },
+            onClick = { vm.login(host.trim(), username.trim(), password) },
             enabled = !vm.isLoading && password.isNotEmpty(),
             modifier = Modifier.fillMaxWidth().height(52.dp)
         ) {
