@@ -178,14 +178,17 @@ class LiveboxApi(
                 if (e is JSONObject) entries.add(e)
             }
         }
-        for (e in entries) {
+        val seenMacs = mutableSetOf<String>()
+        for ((index, e) in entries.withIndex()) {
             fun s(vararg keys: String): String {
                 for (k in keys) { val v = e.optString(k, ""); if (v.isNotEmpty()) return v }
                 return ""
             }
             val name = s("HostName", "hostname", "Name", "UserHostName")
             val ip = s("IPAddress", "IP", "ip")
-            val mac = s("MACAddress", "MAC", "PhysAddress", "mac").ifEmpty { "?" }
+            var mac = s("MACAddress", "MAC", "PhysAddress", "mac")
+            if (mac.isEmpty() || !seenMacs.add(mac)) mac = "appareil-" + (index + 1)
+            seenMacs.add(mac)
             if (name.isEmpty() && ip.isEmpty()) continue
             devices.add(
                 Device(

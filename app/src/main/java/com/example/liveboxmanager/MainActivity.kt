@@ -62,7 +62,7 @@ fun App(vm: LiveboxViewModel = viewModel()) {
     ) { padding ->
         NavHost(
             navController = nav,
-            startDestination = if (vm.isLoggedIn) "dashboard" else "login",
+            startDestination = "login", // fixe : ne jamais changer après composition (sinon crash)
             modifier = Modifier.padding(padding)
         ) {
             composable("login") { LoginScreen(vm, onLogged = { nav.navigate("dashboard") { popUpTo("login") { inclusive = true } } }) }
