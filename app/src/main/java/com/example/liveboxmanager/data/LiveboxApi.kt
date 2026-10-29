@@ -44,8 +44,16 @@ class LiveboxApi(
             .post(body)
             .build()
         client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) return false
-            val json = JSONObject(response.body?.string() ?: "{}")
+            if (!response.isSuccessful) {
+                throw IllegalStateException("L'appareil a répondu avec le code HTTP " + response.code + " — ce n'est probablement pas une Livebox.")
+            }
+            val text = response.body?.string() ?: throw IllegalStateException("Réponse vide de l'appareil.")
+            if (text.trim().startsWith("<")) {
+                throw IllegalStateException("L'appareil à " + host + " a répondu une page web classique : ce n'est probablement pas une Livebox Orange (interface incompatible).")
+            }
+            val json = runCatching { JSONObject(text) }.getOrElse {
+                throw IllegalStateException("Réponse inattendue de l'appareil à " + host + " : ce n'est probablement pas une Livebox Orange.")
+            }
             if (!json.optBoolean("status", false)) return false
             val headers = response.headers
             contextCookie = buildString {
