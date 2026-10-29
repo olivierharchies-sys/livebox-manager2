@@ -96,7 +96,7 @@ class LiveboxApi(
     }
 
     private var lastPassword: String = ""
-    private var lastUsername: String = "admin"
+    private var lastUsername: String = "user"
 
     private fun pbkdf2(password: String, salt: String): String {
         val spec = PBEKeySpec(password.toCharArray(), salt.toByteArray(Charsets.UTF_8), 1000, 256)
