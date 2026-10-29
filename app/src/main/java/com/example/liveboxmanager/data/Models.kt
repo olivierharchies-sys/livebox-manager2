@@ -31,7 +31,7 @@ data class ParentalRule(
     val enabled: Boolean = true,
 )
 
-enum class FirewallLevel(label: String) {
+enum class FirewallLevel(val label: String) {
     OFF("Désactivé (déconseillé)"),
     MEDIUM("Moyen — blocage entrant"),
     HIGH("Élevé — blocage entrant/sortant suspect");
