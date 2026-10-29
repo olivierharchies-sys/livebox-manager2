@@ -38,15 +38,27 @@ class LiveboxViewModel : ViewModel() {
 
     fun login(host: String, password: String) {
         isLoading = true
+        message = null
         viewModelScope.launch {
-            val ok = withContext(Dispatchers.IO) {
-                api = LiveboxApi(host)
-                api.login(password)
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    api = LiveboxApi(host)
+                    api.login(password)
+                }
             }
-            isLoggedIn = ok
+            val ok = result.getOrDefault(false)
             isLoading = false
-            message = if (ok) null else "Échec de connexion — vérifiez le mot de passe admin."
-            if (ok) refreshAll()
+            if (ok) {
+                isLoggedIn = true
+                refreshAll()
+            } else {
+                val err = result.exceptionOrNull()
+                message = if (err != null) {
+                    "Erreur de connexion : " + (err.message ?: "impossible de joindre la Livebox. Vérifiez que vous êtes bien sur son Wi-Fi.")
+                } else {
+                    "Échec de connexion — vérifiez le mot de passe admin."
+                }
+            }
         }
     }
 
@@ -71,11 +83,11 @@ class LiveboxViewModel : ViewModel() {
     fun updateWifi(config: WifiConfig) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                api.setWifiSsid("wl0", config.ssid24)
-                api.setWifiSsid("wl1", config.ssid5)
-                api.setWifiChannel("wl0", config.channel24)
-                api.setWifiChannel("wl1", config.channel5)
-                wifi = api.fetchWifiConfig()
+                runCatching { api.setWifiSsid("wl0", config.ssid24) }
+                runCatching { api.setWifiSsid("wl1", config.ssid5) }
+                runCatching { api.setWifiChannel("wl0", config.channel24) }
+                runCatching { api.setWifiChannel("wl1", config.channel5) }
+                runCatching { wifi = api.fetchWifiConfig() }
             }
             message = "Configuration WiFi appliquée."
         }
@@ -84,9 +96,9 @@ class LiveboxViewModel : ViewModel() {
     fun updateFirewall(status: FirewallStatus) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                api.setFirewallLevel(status.level)
-                api.setUpnp(status.upnpEnabled)
-                firewall = api.fetchFirewall()
+                runCatching { api.setFirewallLevel(status.level) }
+                runCatching { api.setUpnp(status.upnpEnabled) }
+                runCatching { firewall = api.fetchFirewall() }
             }
             message = "Pare-feu mis à jour."
         }
@@ -95,10 +107,10 @@ class LiveboxViewModel : ViewModel() {
     fun toggleParental(rule: ParentalRule) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                api.setDeviceSchedule(rule.deviceId, !rule.enabled, rule.schedule)
+                runCatching { api.setDeviceSchedule(rule.deviceId, !rule.enabled, rule.schedule) }
             }
             parentalRules = parentalRules.map {
-                if (it.id == rule.id) it.copy(enabled = !it.enabled) else it
+                if (it.id == rule.id) it.copy(enabled = !rule.enabled) else it
             }
         }
     }
